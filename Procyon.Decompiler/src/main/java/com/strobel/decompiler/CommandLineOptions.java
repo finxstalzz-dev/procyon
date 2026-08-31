@@ -28,161 +28,161 @@ public class CommandLineOptions {
     @Parameter(
         names = { "-?", "--help" },
         help = true,
-        description = "Bu kullanım bilgilerini görüntüler ve çıkış yapar.")
+        description = "Display this usage information and exit.")
     private boolean _printUsage;
 
     @Parameter(
         names = { "-mv", "--merge-variables" },
-        description = "Mümkün olduğunca çok değişkeni birleştirmeye çalışır. Bu daha az değişken bildirimi " +
-                      "sağlayabilir ancak satır içi ekleme (inlining) ve anlamlı adlandırma pahasına olur. " +
-                      "Bu özellik deneyseldir; gelecek sürümlerde kaldırılabilir veya standart davranış haline gelebilir.")
+        description = "Attempt to merge as many variables as possible.  This may lead to fewer declarations, " +
+                      "but at the expense of inlining and useful naming.  This feature is experimental and " +
+                      "may be removed or become the standard behavior in future releases.")
     private boolean _mergeVariables;
 
     @Parameter(
         names = { "-ei", "--explicit-imports" },
-        description = "[DEPRECIATED - KALDIRILACAK] Açık içe aktarmalar (explicit imports) artık varsayılan olarak etkindir. " +
-                      "Bu seçenek gelecek bir sürümde tamamen kaldırılacaktır.")
+        description = "[DEPRECATED - TO BE REMOVED] Explicit imports are now enabled by default. " +
+                      "This option will be removed in a future release.")
     private boolean _forceExplicitImports;
 
     @Parameter(
         names = { "-ci", "--collapse-imports" },
-        description = "Aynı paketten yapılan birden çok içe aktarmayı tek bir joker karakterli (*) içe aktarmada birleştirir.")
+        description = "Collapse multiple imports from the same package into a single wildcard import.")
     private boolean _collapseImports;
 
     @Parameter(
         names = { "-eta", "--explicit-type-arguments" },
-        description = "Genel (generic) metodlar için tür argümanlarını her zaman açıkça yazdırır.")
+        description = "Always print type arguments to generic methods.")
     private boolean _forceExplicitTypeArguments;
 
     @Parameter(
         names = { "-ec", "--retain-explicit-casts" },
-        description = "Gereksiz olan açık tür dönüşümlerini (explicit casts) koddan temizlemez, olduğu gibi korur.")
+        description = "Do not remove redundant explicit casts.")
     private boolean _retainRedundantCasts;
 
     @Parameter(
         names = { "-fsb", "--flatten-switch-blocks" },
-        description = "Mümkün olduğunda switch bölümlerinin etrafındaki süslü parantez ({}) ifadelerini kaldırıp düzleştirir.")
+        description = "Drop the braces statements around switch sections when possible.")
     private boolean _flattenSwitchBlocks;
 
     @Parameter(
         names = { "-ss", "--show-synthetic" },
-        description = "Sentetik (derleyici tarafından otomatik üretilen) üyeleri kodda gösterir.")
+        description = "Show synthetic (compiler-generated) members.")
     private boolean _showSyntheticMembers;
 
     @Parameter(
         names = { "-b", "--bytecode-ast" },
-        description = "Java kodu yerine Bytecode AST (Soyut Sözdizimi Ağacı) çıktısı verir.")
+        description = "Output Bytecode AST instead of Java.")
     private boolean _bytecodeAst;
 
     @Parameter(
         names = { "-r", "--raw-bytecode" },
-        description = "Java yerine Ham Bytecode çıktısı verir (detay seviyesini kontrol etmek için bkz: -cp, -lv, -ta, -v).")
+        description = "Output Raw Bytecode instead of Java (to control the level of detail, see: -cp, -lv, -ta, -v).")
     private boolean _rawBytecode;
 
     @Parameter(
         names = { "-cp", "--constant-pool" },
-        description = "Ham bytecode görüntülenirken sabit havuzunu (constant pool) da dahil eder (-v ile kullanıldığında buna gerek yoktur).")
+        description = "Includes the constant pool when displaying raw bytecode (unnecessary with -v).")
     private boolean _showConstantPool;
 
     @Parameter(
         names = { "-lv", "--local-variables" },
-        description = "Ham bytecode görüntülenirken yerel değişken tablolarını dahil eder (-v ile kullanıldığında buna gerek yoktur).")
+        description = "Includes the local variable tables when displaying raw bytecode (unnecessary with -v).")
     private boolean _showLocalVariableDetails;
 
     @Parameter(
         names = { "-ta", "--type-attributes" },
-        description = "Ham bytecode görüntülenirken tür niteliklerini dahil eder (-v ile kullanıldığında buna gerek yoktur).")
+        description = "Includes type attributes when displaying raw bytecode (unnecessary with -v).")
     private boolean _showTypeAttributes;
 
     @Parameter(
         names = { "-v", "--verbose" },
-        description = "Seçilen çıktı diline bağlı olarak daha ayrıntılı çıktı içerir (şu anda yalnızca ham bytecode için desteklenmektedir).")
+        description = "Includes more detailed output depending on the output language (currently only supported for raw bytecode).")
     private boolean _verbose;
 
     @Parameter(
         names = { "-u", "--unoptimized" },
-        description = "Optimize edilmemiş kodu gösterir (yalnızca -b seçeneği ile birlikte çalışır).")
+        description = "Show unoptimized code (only in combination with -b).")
     private boolean _unoptimized;
 
     @Parameter(
         names = { "-ent", "--exclude-nested" },
-        description = "İç içe geçmiş (nested) türleri, onları çevreleyen ana türler decompile edilirken hariç tutar.")
+        description = "Exclude nested types when decompiling their enclosing types.")
     private boolean _excludeNestedTypes;
 
     @Parameter(
         names = { "-o", "--output-directory" },
-        description = "Decompile edilen sonuçları konsola yazdırmak yerine belirtilen dizine/klasöre yazar.")
+        description = "Write decompiled results to specified directory instead of the console.")
     private String _outputDirectory;
 
     @Parameter(
         names = { "-jar", "--jar-file" },
-        description = "[DEPRECIATED - KALDIRILACAK] Belirtilen jar dosyasındaki tüm sınıfları decompile eder (-ent ve -s seçeneklerini devre dışı bırakır).")
+        description = "[DEPRECATED] Decompile all classes in the specified jar file (disables -ent and -s).")
     private String _jarFile;
 
     @Parameter(
         names = { "-ln", "--with-line-numbers" },
-        description = "Ham bytecode modunda satır numaralarını dahil eder; Java modunda ise yalnızca -o parametresiyle birlikte desteklenir.")
+        description = "Include line numbers in raw bytecode mode; supports Java mode with -o only.")
     private boolean _includeLineNumbers;
 
     @Parameter(
         names = { "-sl", "--stretch-lines" },
-        description = "Java satırlarını orijinal satır numaralarıyla eşleşecek şekilde uzatır (yalnızca -o ile birlikte çalışır) [DENEYSEL].")
+        description = "Stretch Java lines to match original line numbers (only in combination with -o) [EXPERIMENTAL].")
     private boolean _stretchLines;
 
     @Parameter(
         names = { "-dl", "--debug-line-numbers" },
-        description = "Hata ayıklama için, Java satır numaralarını satır içi yorum satırı olarak gösterir (-ln durumunu tetikler; -o gerektirir).")
+        description = "For debugging, show Java line numbers as inline comments (implies -ln; requires -o).")
     private boolean _showDebugLineNumbers;
 
     @Parameter(
         names = { "-ps", "--retain-pointless-switches" },
-        description = "Yalnızca 'default' etiketi olan (başka case'i bulunmayan) switch bloklarının içeriğini dışarı çıkarmaz, olduğu gibi korur.")
+        description = "Do not lift the contents of switches having only a default label.")
     private boolean _retainPointlessSwitches;
 
     @Parameter(
         names = { "-ll", "--log-level" },
-        description = "Log ayrıntı düzeyini belirler (0-3 arası değer alır). Seviye 0 loglamayı tamamen kapatır.",
+        description = "Set the level of log verbosity (0-3).  Level 0 disables logging.",
         arity = 1)
     private int _logLevel;
 
     @Parameter(
         names = { "-lc", "--light" },
-        description = "Açık renkli arka plana sahip konsollar için tasarlanmış bir renk şeması kullanır.")
+        description = "Use a color scheme designed for consoles with light background colors.")
     private boolean _useLightColorScheme;
 
     @Parameter(
         names = { "--unicode" },
-        description = "Unicode çıktısını etkinleştirir (yazdırılabilir ASCII dışı karakterler dönüştürülmeden olduğu gibi kalır).")
+        description = "Enable Unicode output (printable non-ASCII characters will not be escaped).")
     private boolean _isUnicodeOutputEnabled;
 
     @Parameter(
         names = { "-eml", "--eager-method-loading" },
-        description = "Metod gövdelerinin önceden (eager) yüklenmesini etkinleştirir (büyük arşivlerin decompile hızını artırabilir).")
+        description = "Enable eager loading of method bodies (may speed up decompilation of larger archives).")
     private boolean _isEagerMethodLoadingEnabled;
 
     @Parameter(
         names = { "-sm", "--simplify-member-references" },
-        description = "Java çıktısındaki türe göre nitelenmiş üye referanslarını basitleştirir [DENEYSEL].")
+        description = "Simplify type-qualified member references in Java output [EXPERIMENTAL].")
     private boolean _simplifyMemberReferences;
 
     @Parameter(
         names = { "-fq", "--force-qualified-references" },
-        description = "Java çıktısında her zaman tam nitelikli (fully qualified) tür ve üye referansları kullanmaya zorlar.")
+        description = "Force fully qualified type and member references in Java output.")
     private boolean _forceFullyQualifiedReferences;
 
     @Parameter(
         names = { "--disable-foreach" },
-        description = "'for each' döngü dönüşümlerini devre dışı bırakır.")
+        description = "Disable 'for each' loop transforms.")
     private boolean _disableForEachTransforms;
 
     @Parameter(
         names = { "--version" },
-        description = "Decompiler versiyonunu görüntüler ve çıkış yapar.")
+        description = "Display the decompiler version and exit.")
     private boolean _printVersion;
 
     @Parameter(
         names = { "--suppress-banner" },
-        description = "Çıktı dosyalarında 'Decompiled by Procyon' başlık yazısının gösterilmesini engeller.",
+        description = "Do not display the 'Decompiled by Procyon' banner in output.",
         hidden = true)
 
     private boolean _suppressBanner;
