@@ -95,9 +95,6 @@ public class Flags {
         if ((mask & DEFAULT) != 0) {
             flags.add(Flag.DEFAULT);
         }
-        if ((mask & DEFAULT) != 0) {
-            flags.add(Flag.DEFAULT);
-        }
         if ((mask & STRICTFP) != 0) {
             flags.add(Flag.STRICTFP);
         }
@@ -315,6 +312,12 @@ public class Flags {
     public static final int ACC_SUPER     = 0x0020;
     public static final int ACC_BRIDGE    = 0x0040;
     public static final int ACC_VARARGS   = 0x0080;
+    public static final int ACC_RECORD    = 0x10000;
+    public static final int ACC_SEALED    = 0x0200;
+    public static final int ACC_MODULE    = 0x8000;
+    public static final long SEALED       = 1L << 50;
+    public static final long NON_SEALED   = 1L << 51;
+    public static final long PERMITS      = 1L << 52;
 
     /*****************************************
      * Internal compiler flags (no bits in the lower 16).
@@ -630,6 +633,18 @@ public class Flags {
 
         if (testAny(accessFlags, ACC_VARARGS)) {
             flags |= (kind == Kind.Field ? TRANSIENT : VARARGS);
+        }
+
+        if (testAny(accessFlags, ACC_RECORD)) {
+            flags |= ACC_RECORD;
+        }
+
+        if (testAny(accessFlags, ACC_SEALED)) {
+            flags |= SEALED;
+        }
+
+        if (testAny(accessFlags, ACC_MODULE)) {
+            flags |= ANONYMOUS;
         }
 
         return flags;

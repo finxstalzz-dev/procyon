@@ -66,7 +66,7 @@ public final class AstOptimizer {
             reduceBranchInstructionSet(block);
         }
 
-        if (!shouldPerformStep(abortBeforeStep, AstOptimizationStep.InlineVariables)) {
+        if (context.getSettings().getDisableInlining() || !shouldPerformStep(abortBeforeStep, AstOptimizationStep.InlineVariables)) {
             return;
         }
 

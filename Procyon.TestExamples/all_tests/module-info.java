@@ -1,0 +1,3 @@
+module examples {
+    exports examples;
+}

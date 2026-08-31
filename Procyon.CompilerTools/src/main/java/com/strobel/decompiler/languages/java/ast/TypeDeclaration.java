@@ -16,6 +16,8 @@
 
 package com.strobel.decompiler.languages.java.ast;
 
+import com.strobel.assembler.metadata.Flags;
+import com.strobel.assembler.metadata.TypeDefinition;
 import com.strobel.decompiler.languages.EntityType;
 import com.strobel.decompiler.patterns.INode;
 import com.strobel.decompiler.patterns.Match;
@@ -33,6 +35,8 @@ public class TypeDeclaration extends EntityDeclaration {
                 return getChildByRole(Roles.ANNOTATION_KEYWORD);
             case ENUM:
                 return getChildByRole(Roles.ENUM_KEYWORD);
+            case RECORD:
+                return getChildByRole(Roles.RECORD_KEYWORD);
             default:
                 return JavaTokenNode.NULL;
         }
@@ -73,6 +77,24 @@ public class TypeDeclaration extends EntityDeclaration {
 
     public final JavaTokenNode getRightBraceToken() {
         return getChildByRole(Roles.RIGHT_BRACE);
+    }
+
+    public final AstNodeCollection<AstType> getPermittedSubclasses() {
+        return getChildrenByRole(Roles.PERMITTED_SUBCLASS);
+    }
+
+    public final AstNodeCollection<ParameterDeclaration> getRecordComponents() {
+        return getChildrenByRole(Roles.RECORD_COMPONENT);
+    }
+
+    public final boolean isSealed() {
+        final TypeDefinition type = getUserData(Keys.TYPE_DEFINITION);
+        return type != null && (type.getFlags() & Flags.SEALED) != 0;
+    }
+
+    public final boolean isNonSealed() {
+        final TypeDefinition type = getUserData(Keys.TYPE_DEFINITION);
+        return type != null && (type.getFlags() & Flags.NON_SEALED) != 0;
     }
 
     @Override

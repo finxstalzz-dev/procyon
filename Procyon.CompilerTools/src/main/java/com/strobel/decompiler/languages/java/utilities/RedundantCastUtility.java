@@ -1064,6 +1064,16 @@ public final class RedundantCastUtility {
                 if (MetadataHelper.isRawType(opType) && !MetadataHelper.isAssignableFrom(castType, opType/*, false*/)) {
                     return true;
                 }
+                if (opType instanceof IGenericInstance) {
+                    if (!MetadataHelper.isSameType(castType, opType, true) && MetadataHelper.getUpperBound(castType) != MetadataHelper.getUpperBound(opType)) {
+                        // generic type arguments differ -> keep cast for type safety
+                        final IGenericInstance gCast = (IGenericInstance) castType;
+                        final IGenericInstance gOp = (IGenericInstance) opType;
+                        if (!gCast.getTypeArguments().equals(gOp.getTypeArguments())) {
+                            return true;
+                        }
+                    }
+                }
             }
             else if (MetadataHelper.isRawType(castType)) {
                 if (opType instanceof IGenericInstance && !MetadataHelper.isAssignableFrom(castType, opType/*, false*/)) {

@@ -28,6 +28,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -73,69 +76,94 @@ public final class ControlFlowGraph {
     }
 
     public final void computeDominance(final BooleanBox cancelled) {
-        final ControlFlowNode entryPoint = getEntryPoint();
+        for (final ControlFlowNode n : _nodes) {
+            n.setImmediateDominator(null);
+            n.getDominatorTreeChildren().clear();
+            n.getDominanceFrontier().clear();
+        }
 
+        final ControlFlowNode entryPoint = getEntryPoint();
         entryPoint.setImmediateDominator(entryPoint);
 
-        final BooleanBox changed = new BooleanBox(true);
+        final List<ControlFlowNode> rpo = new ArrayList<>();
+        resetVisited();
+        buildReversePostOrder(entryPoint, rpo);
+        java.util.Collections.reverse(rpo);
 
-        while (changed.get()) {
-            changed.set(false);
-            resetVisited();
+        final List<ControlFlowNode> order = new ArrayList<>();
+        for (final ControlFlowNode n : rpo) {
+            if (n != entryPoint) {
+                order.add(n);
+            }
+        }
+        for (final ControlFlowNode n : _nodes) {
+            if (!rpo.contains(n)) {
+                order.add(n);
+            }
+        }
 
+        boolean changed = true;
+        while (changed) {
             if (cancelled.get()) {
                 throw new CancellationException();
             }
-
-            entryPoint.traversePreOrder(
-                new Function<ControlFlowNode, Iterable<ControlFlowNode>>() {
-                    @Override
-                    public final Iterable<ControlFlowNode> apply(final ControlFlowNode input) {
-                        return input.getSuccessors();
-                    }
-                },
-                new Block<ControlFlowNode>() {
-                    @Override
-                    public final void accept(final ControlFlowNode b) {
-                        if (b == entryPoint) {
-                            return;
-                        }
-
-                        ControlFlowNode newImmediateDominator = null;
-
-                        for (final ControlFlowNode p : b.getPredecessors()) {
-                            if (p.isVisited() && p != b) {
-                                newImmediateDominator = p;
-                                break;
-                            }
-                        }
-
-                        if (newImmediateDominator == null) {
-                            throw new IllegalStateException("Could not compute new immediate dominator!");
-                        }
-
-                        for (final ControlFlowNode p : b.getPredecessors()) {
-                            if (p != b && p.getImmediateDominator() != null) {
-                                newImmediateDominator = findCommonDominator(p, newImmediateDominator);
-                            }
-                        }
-
-                        if (b.getImmediateDominator() != newImmediateDominator) {
-                            b.setImmediateDominator(newImmediateDominator);
-                            changed.set(true);
-                        }
+            changed = false;
+            for (final ControlFlowNode b : order) {
+                ControlFlowNode newIdom = null;
+                for (final ControlFlowNode p : b.getPredecessors()) {
+                    if (p.getImmediateDominator() != null) {
+                        newIdom = p;
+                        break;
                     }
                 }
-            );
+                if (newIdom == null) {
+                    continue;
+                }
+                for (final ControlFlowNode p : b.getPredecessors()) {
+                    if (p == newIdom || p.getImmediateDominator() == null) {
+                        continue;
+                    }
+                    newIdom = findCommonDominator(p, newIdom);
+                    if (newIdom == null) {
+                        break;
+                    }
+                }
+                if (newIdom != null && b.getImmediateDominator() != newIdom) {
+                    b.setImmediateDominator(newIdom);
+                    changed = true;
+                }
+            }
         }
 
         entryPoint.setImmediateDominator(null);
 
         for (final ControlFlowNode node : _nodes) {
-            final ControlFlowNode immediateDominator = node.getImmediateDominator();
+            final ControlFlowNode idom = node.getImmediateDominator();
+            if (idom != null) {
+                idom.getDominatorTreeChildren().add(node);
+            }
+        }
+    }
 
-            if (immediateDominator != null) {
-                immediateDominator.getDominatorTreeChildren().add(node);
+    private void buildReversePostOrder(final ControlFlowNode entry, final List<ControlFlowNode> out) {
+        final java.util.Deque<ControlFlowNode> stack = new java.util.ArrayDeque<>();
+        final java.util.Deque<java.util.Iterator<ControlFlowNode>> itStack = new java.util.ArrayDeque<>();
+        stack.push(entry);
+        itStack.push(entry.getSuccessors().iterator());
+        entry.setVisited(true);
+        while (!stack.isEmpty()) {
+            final java.util.Iterator<ControlFlowNode> it = itStack.peek();
+            if (it.hasNext()) {
+                final ControlFlowNode succ = it.next();
+                if (!succ.isVisited()) {
+                    succ.setVisited(true);
+                    stack.push(succ);
+                    itStack.push(succ.getSuccessors().iterator());
+                }
+            }
+            else {
+                out.add(stack.pop());
+                itStack.pop();
             }
         }
     }
@@ -176,6 +204,9 @@ public final class ControlFlowGraph {
     }
 
     public static ControlFlowNode findCommonDominator(final ControlFlowNode a, final ControlFlowNode b) {
+        if (a == null || b == null) {
+            return null;
+        }
         final Set<ControlFlowNode> path1 = new LinkedHashSet<>();
 
         ControlFlowNode node1 = a;
@@ -192,7 +223,29 @@ public final class ControlFlowGraph {
             node2 = node2.getImmediateDominator();
         }
 
-        throw new IllegalStateException("No common dominator found!");
+        return null;
+    }
+
+    public final List<ControlFlowNode> getUnreachableNodes() {
+        final List<ControlFlowNode> result = new ArrayList<>();
+        for (final ControlFlowNode n : _nodes) {
+            if (n.getNodeType() == ControlFlowNodeType.EntryPoint) {
+                continue;
+            }
+            if (n.getImmediateDominator() == null && n.getIncoming().isEmpty()) {
+                result.add(n);
+            }
+        }
+        return java.util.Collections.unmodifiableList(result);
+    }
+
+    public final boolean containsEdge(final ControlFlowNode from, final ControlFlowNode to, final JumpType type) {
+        for (final ControlFlowEdge e : from.getOutgoing()) {
+            if (e.getTarget() == to && e.getType() == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public final void export(final File path) {

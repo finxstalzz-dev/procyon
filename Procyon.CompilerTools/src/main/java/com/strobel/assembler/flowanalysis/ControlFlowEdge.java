@@ -47,10 +47,19 @@ public final class ControlFlowEdge {
             final ControlFlowEdge other = (ControlFlowEdge) obj;
 
             return other._source == _source &&
-                   other._target == _target;
+                   other._target == _target &&
+                   other._type == _type;
         }
 
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = System.identityHashCode(_source);
+        result = 31 * result + System.identityHashCode(_target);
+        result = 31 * result + _type.hashCode();
+        return result;
     }
 
     @Override

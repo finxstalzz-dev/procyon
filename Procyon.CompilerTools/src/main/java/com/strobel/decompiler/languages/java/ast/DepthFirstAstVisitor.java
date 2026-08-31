@@ -393,4 +393,9 @@ public abstract class DepthFirstAstVisitor<T, S> implements IAstVisitor<T, S> {
     public S visitTryCatchStatement(final TryCatchStatement node, final T data) {
         return visitChildren(node, data);
     }
+
+    @Override
+    public S visitYieldStatement(final YieldStatement node, final T data) {
+        return visitChildren(node, data);
+    }
 }

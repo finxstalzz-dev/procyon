@@ -23,10 +23,22 @@ import com.strobel.decompiler.patterns.Role;
 public class SwitchStatement extends Statement {
     public final static TokenRole SWITCH_KEYWORD_ROLE = new TokenRole("switch", TokenRole.FLAG_KEYWORD);
     public final static Role<SwitchSection> SWITCH_SECTION_ROLE = new Role<>("SwitchSection", SwitchSection.class);
+    public final static TokenRole ARROW_ROLE = new TokenRole("->", TokenRole.FLAG_OPERATOR);
+
+    private boolean _isSwitchExpression;
 
     public SwitchStatement(final Expression testExpression) {
         super( testExpression.getOffset());
         setExpression(testExpression);
+    }
+
+    public final boolean isSwitchExpression() {
+        return _isSwitchExpression;
+    }
+
+    public final void setSwitchExpression(final boolean isSwitchExpression) {
+        verifyNotFrozen();
+        _isSwitchExpression = isSwitchExpression;
     }
 
     public final JavaTokenNode getReturnToken() {

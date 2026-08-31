@@ -45,9 +45,18 @@ public class DecompilerSettings {
     private String _outputDirectory;
     private boolean _showDebugLineNumbers;
     private boolean _simplifyMemberReferences;
+    private boolean _useVar;
+    private boolean _useRecordCompactConstructor = true;
+    private boolean _disableInlining;
 
     public DecompilerSettings() {
     }
+    public final boolean getUseVar() { return _useVar; }
+    public final void setUseVar(final boolean v) { _useVar = v; }
+    public final boolean getUseRecordCompactConstructor() { return _useRecordCompactConstructor; }
+    public final void setUseRecordCompactConstructor(final boolean v) { _useRecordCompactConstructor = v; }
+    public final boolean getDisableInlining() { return _disableInlining; }
+    public final void setDisableInlining(final boolean v) { _disableInlining = v; }
 
     public final boolean getExcludeNestedTypes() {
         return _excludeNestedTypes;

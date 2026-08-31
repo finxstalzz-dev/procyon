@@ -28,7 +28,17 @@ public final class RuntimeHelpers {
     }
 
     public static void ensureClassInitialized(final Class<?> clazz) {
-        getUnsafeInstance().ensureClassInitialized(VerifyArgument.notNull(clazz, "clazz"));
+        VerifyArgument.notNull(clazz, "clazz");
+        try {
+            Unsafe u = getUnsafeInstance();
+            if (u != null) {
+                u.ensureClassInitialized(clazz);
+                return;
+            }
+        } catch (Throwable ignored) {}
+        try {
+            Class.forName(clazz.getName(), true, clazz.getClassLoader());
+        } catch (Throwable ignored) {}
     }
 
     // <editor-fold defaultstate="collapsed" desc="Unsafe Access">
@@ -52,12 +62,7 @@ public final class RuntimeHelpers {
             _unsafe = (Unsafe) instanceField.get(Unsafe.class);
         }
         catch (Throwable t) {
-            throw new IllegalStateException(
-                String.format(
-                    "Could not load an instance of the %s class.",
-                    Unsafe.class.getName()
-                )
-            );
+            return _unsafe;
         }
 
         return _unsafe;

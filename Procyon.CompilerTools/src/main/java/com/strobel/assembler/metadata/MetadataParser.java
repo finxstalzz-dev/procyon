@@ -17,7 +17,9 @@
 package com.strobel.assembler.metadata;
 
 import com.strobel.assembler.metadata.signatures.*;
+import com.strobel.assembler.metadata.signatures.Reifier;
 import com.strobel.compilerservices.RuntimeHelpers;
+import java.lang.reflect.GenericSignatureFormatError;
 import com.strobel.core.ArrayUtilities;
 import com.strobel.core.SafeCloseable;
 import com.strobel.core.StringUtilities;
@@ -117,6 +119,10 @@ public final class MetadataParser {
 
     public TypeReference parseTypeDescriptor(final String descriptor) {
         VerifyArgument.notNull(descriptor, "descriptor");
+
+        if ("L".equals(descriptor)) {
+            return _factory.makeNamedType("L");
+        }
 
         if (descriptor.startsWith("[")) {
             return parseTypeSignature(descriptor);
@@ -229,9 +235,35 @@ public final class MetadataParser {
 
     @SuppressWarnings("ConstantConditions")
     public IMethodSignature parseMethodSignature(final String signature) {
-        VerifyArgument.notNull(signature, "signature");
+        if (signature == null) {
+            return null;
+        }
 
-        final MethodTypeSignature methodTypeSignature = _signatureParser.parseMethodSignature(signature);
+        final MethodTypeSignature methodTypeSignature;
+        try {
+            methodTypeSignature = _signatureParser.parseMethodSignature(signature);
+        } catch (GenericSignatureFormatError e) {
+            if (!signature.contains("(")) {
+                try {
+                    TypeReference type = parseTypeSignature(signature);
+                    if (type != null) {
+                        return _factory.makeMethodSignature(
+                            type,
+                            Collections.<TypeReference>emptyList(),
+                            Collections.<GenericParameter>emptyList(),
+                            Collections.<TypeReference>emptyList()
+                        );
+                    }
+                } catch (Exception ex) {
+                }
+            }
+            return _factory.makeMethodSignature(
+                BuiltinTypes.Object,
+                Collections.<TypeReference>emptyList(),
+                Collections.<GenericParameter>emptyList(),
+                Collections.<TypeReference>emptyList()
+            );
+        }
         final Reifier reifier = Reifier.make(_factory);
 
         final TypeReference returnType;

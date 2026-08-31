@@ -871,6 +871,13 @@ public final class TypeAnalysis {
                         shouldInferVariableType(v) &&
                         isBoolean(inferTypeForVariable(v, expectedType != null ? expectedType : BuiltinTypes.Boolean, true, flags))) {
 
+                        if (v.getType() != null && v.getType().getSimpleType() != JvmType.Boolean) {
+                            // Don't infer boolean for int variables initialized with 0/1
+                            if (v.getType().getSimpleType() == JvmType.Integer) {
+                                return null;
+                            }
+                        }
+
                         return BuiltinTypes.Boolean;
                     }
 

@@ -28,6 +28,13 @@ public class InstanceOfExpression extends Expression {
         setType(type);
     }
 
+    public InstanceOfExpression( int offset, final Expression expression, final AstType type, final String patternVariable) {
+        super( offset);
+        setExpression(expression);
+        setType(type);
+        setPatternVariable(patternVariable);
+    }
+
     public final AstType getType() {
         return getChildByRole(Roles.TYPE);
     }
@@ -48,6 +55,27 @@ public class InstanceOfExpression extends Expression {
         setChildByRole(Roles.EXPRESSION, value);
     }
 
+    public final String getPatternVariable() {
+        final Identifier id = getChildByRole(Roles.PATTERN_VARIABLE);
+        return id.isNull() ? null : id.getName();
+    }
+
+    public final void setPatternVariable(final String name) {
+        if (name == null) {
+            setChildByRole(Roles.PATTERN_VARIABLE, Identifier.NULL);
+        } else {
+            setChildByRole(Roles.PATTERN_VARIABLE, Identifier.create(name));
+        }
+    }
+
+    public final Identifier getPatternVariableToken() {
+        return getChildByRole(Roles.PATTERN_VARIABLE);
+    }
+
+    public final AstNodeCollection<ParameterDeclaration> getRecordPatternComponents() {
+        return getChildrenByRole(Roles.RECORD_PATTERN_COMPONENT);
+    }
+
     @Override
     public <T, R> R acceptVisitor(final IAstVisitor<? super T, ? extends R> visitor, final T data) {
         return visitor.visitInstanceOfExpression(this, data);
@@ -60,7 +88,8 @@ public class InstanceOfExpression extends Expression {
 
             return !otherExpression.isNull() &&
                    getExpression().matches(otherExpression.getExpression(), match) &&
-                   getType().matches(otherExpression.getType(), match);
+                   getType().matches(otherExpression.getType(), match) &&
+                   getPatternVariableToken().matches(otherExpression.getPatternVariableToken(), match);
         }
 
         return false;

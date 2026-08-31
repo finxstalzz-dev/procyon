@@ -256,6 +256,57 @@ public final class ClassFileReader extends MetadataReader {
 
                 return new InnerClassesAttribute(length, ArrayUtilities.asUnmodifiableList(entries));
             }
+
+            case AttributeNames.PermittedSubclasses: {
+                final int count = buffer.readUnsignedShort();
+                final ConstantPool.TypeInfoEntry[] classes = new ConstantPool.TypeInfoEntry[count];
+
+                for (int i = 0; i < count; i++) {
+                    classes[i] = _constantPool.getEntry(buffer.readUnsignedShort());
+                }
+
+                return new PermittedSubclassesAttribute(length, ArrayUtilities.asUnmodifiableList(classes));
+            }
+
+            case AttributeNames.NestHost: {
+                final int hostIndex = buffer.readUnsignedShort();
+                final ConstantPool.TypeInfoEntry hostClass = _constantPool.getEntry(hostIndex);
+
+                return new NestHostAttribute(length, hostClass);
+            }
+
+            case AttributeNames.NestMembers: {
+                final int count = buffer.readUnsignedShort();
+                final ConstantPool.TypeInfoEntry[] classes = new ConstantPool.TypeInfoEntry[count];
+
+                for (int i = 0; i < count; i++) {
+                    classes[i] = _constantPool.getEntry(buffer.readUnsignedShort());
+                }
+
+                return new NestMembersAttribute(length, ArrayUtilities.asUnmodifiableList(classes));
+            }
+
+            case AttributeNames.Record: {
+                final int count = buffer.readUnsignedShort();
+                final RecordAttribute.RecordComponentInfo[] components =
+                    new RecordAttribute.RecordComponentInfo[count];
+
+                for (int i = 0; i < count; i++) {
+                    final int nameIndex = buffer.readUnsignedShort();
+                    final int descriptorIndex = buffer.readUnsignedShort();
+                    final int attrCount = buffer.readUnsignedShort();
+
+                    final String compName = _constantPool.lookupUtf8Constant(nameIndex);
+                    final String descriptor = _constantPool.lookupUtf8Constant(descriptorIndex);
+
+                    final SourceAttribute[] attributes = new SourceAttribute[attrCount];
+                    readAttributes(buffer, attributes);
+
+                    components[i] = new RecordAttribute.RecordComponentInfo(compName, descriptor, attributes);
+                }
+
+                return new RecordAttribute(length, ArrayUtilities.asUnmodifiableList(components));
+            }
         }
 
         return super.readAttributeCore(name, buffer, originalOffset, length);
@@ -312,6 +363,17 @@ public final class ClassFileReader extends MetadataReader {
                 }
 
                 case AttributeNames.InnerClasses: {
+                    attributes[i] = readAttributeCore(name, buffer, buffer.position(), length);
+                    continue;
+                }
+
+                case AttributeNames.PermittedSubclasses:
+                case AttributeNames.NestHost:
+                case AttributeNames.NestMembers:
+                case AttributeNames.Record:
+                case AttributeNames.Module:
+                case AttributeNames.ModulePackages:
+                case AttributeNames.ModuleMainClass: {
                     attributes[i] = readAttributeCore(name, buffer, buffer.position(), length);
                     continue;
                 }

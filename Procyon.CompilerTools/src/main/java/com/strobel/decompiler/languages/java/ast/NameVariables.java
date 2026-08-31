@@ -219,10 +219,13 @@ public class NameVariables {
     }
 
     public String getAlternativeName(final String oldVariableName) {
+        if ("_".equals(oldVariableName)) {
+            return "_";
+        }
         final IntegerBox number = new IntegerBox();
         final String nameWithoutDigits = splitName(oldVariableName, number);
 
-        if (!_typeNames.containsKey(nameWithoutDigits) && !JavaOutputVisitor.isKeyword(oldVariableName)) {
+        if (!_typeNames.containsKey(nameWithoutDigits) && !JavaOutputVisitor.isKeyword(oldVariableName) && !_fieldNamesInCurrentType.contains(oldVariableName)) {
             _typeNames.put(nameWithoutDigits, Math.max(number.value, 1));
             return oldVariableName;
         }

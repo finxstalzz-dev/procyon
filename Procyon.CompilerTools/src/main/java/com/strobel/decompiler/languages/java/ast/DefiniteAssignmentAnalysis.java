@@ -505,32 +505,66 @@ public class DefiniteAssignmentAnalysis {
 
         @Override
         public DefiniteAssignmentStatus visitSwitchStatement(final SwitchStatement node, final DefiniteAssignmentStatus data) {
-            return node.getExpression().acceptVisitor(this, data);
+            DefiniteAssignmentStatus afterExpr = node.getExpression().acceptVisitor(this, data);
+            DefiniteAssignmentStatus merged = null;
+            for (SwitchSection sec : node.getSwitchSections()) {
+                DefiniteAssignmentStatus cur = afterExpr;
+                for (Statement st : sec.getStatements()) {
+                    cur = st.acceptVisitor(this, cur);
+                }
+                if (!sec.getExpression().isNull()) {
+                    cur = sec.getExpression().acceptVisitor(this, cur);
+                }
+                merged = merged == null ? cur : mergeStatus(merged, cur);
+            }
+            return merged != null ? merged : afterExpr;
         }
 
         @Override
         public DefiniteAssignmentStatus visitDoWhileStatement(final DoWhileStatement node, final DefiniteAssignmentStatus data) {
-            return data;
+            DefiniteAssignmentStatus afterBody = node.getEmbeddedStatement().acceptVisitor(this, data);
+            return node.getCondition().acceptVisitor(this, afterBody);
         }
 
         @Override
         public DefiniteAssignmentStatus visitWhileStatement(final WhileStatement node, final DefiniteAssignmentStatus data) {
-            return data;
+            DefiniteAssignmentStatus afterCond = node.getCondition().acceptVisitor(this, data);
+            DefiniteAssignmentStatus afterBody = node.getEmbeddedStatement().acceptVisitor(this, afterCond);
+            return mergeStatus(afterCond, afterBody);
         }
 
         @Override
         public DefiniteAssignmentStatus visitForStatement(final ForStatement node, final DefiniteAssignmentStatus data) {
-            return data;
+            DefiniteAssignmentStatus cur = data;
+            for (Statement init : node.getInitializers()) { cur = init.acceptVisitor(this, cur); }
+            cur = node.getCondition().acceptVisitor(this, cur);
+            DefiniteAssignmentStatus afterBody = node.getEmbeddedStatement().acceptVisitor(this, cur);
+            for (Statement iter : node.getIterators()) { afterBody = iter.acceptVisitor(this, afterBody); }
+            return mergeStatus(cur, afterBody);
         }
 
         @Override
         public DefiniteAssignmentStatus visitTryCatchStatement(final TryCatchStatement node, final DefiniteAssignmentStatus data) {
-            return data;
+            DefiniteAssignmentStatus cur = data;
+            for (VariableDeclarationStatement res : node.getResources()) { cur = res.acceptVisitor(this, cur); }
+            DefiniteAssignmentStatus afterTry = node.getTryBlock().acceptVisitor(this, cur);
+            DefiniteAssignmentStatus merged = afterTry;
+            for (CatchClause cc : node.getCatchClauses()) {
+                DefiniteAssignmentStatus afterCatch = cc.getBody().acceptVisitor(this, cur);
+                merged = mergeStatus(merged, afterCatch);
+            }
+            if (!node.getFinallyBlock().isNull()) {
+                DefiniteAssignmentStatus afterFinally = node.getFinallyBlock().acceptVisitor(this, merged);
+                return afterFinally;
+            }
+            return merged;
         }
 
         @Override
         public DefiniteAssignmentStatus visitForEachStatement(final ForEachStatement node, final DefiniteAssignmentStatus data) {
-            return data;
+            DefiniteAssignmentStatus afterIn = node.getInExpression().acceptVisitor(this, data);
+            DefiniteAssignmentStatus afterBody = node.getEmbeddedStatement().acceptVisitor(this, afterIn);
+            return mergeStatus(afterIn, afterBody);
         }
 
         @Override
@@ -762,7 +796,7 @@ public class DefiniteAssignmentAnalysis {
             }
 
             final DefiniteAssignmentStatus afterTrue = node.getTrueExpression().acceptVisitor(this, beforeTrue);
-            final DefiniteAssignmentStatus afterFalse = node.getTrueExpression().acceptVisitor(this, beforeFalse);
+            final DefiniteAssignmentStatus afterFalse = node.getFalseExpression().acceptVisitor(this, beforeFalse);
 
             return mergeStatus(cleanSpecialValues(afterTrue), cleanSpecialValues(afterFalse));
         }

@@ -22,9 +22,29 @@ import com.strobel.decompiler.patterns.Role;
 
 public class SwitchSection extends AstNode {
     public final static Role<CaseLabel> CaseLabelRole = new Role<>("CaseLabel", CaseLabel.class);
+    public final static Role<Expression> EXPRESSION_ROLE = new Role<>("Expression", Expression.class, Expression.NULL);
+
+    private boolean _isDefault;
+
+    public final boolean isDefault() {
+        return _isDefault;
+    }
+
+    public final void setDefault(final boolean isDefault) {
+        verifyNotFrozen();
+        _isDefault = isDefault;
+    }
 
     public final AstNodeCollection<Statement> getStatements() {
         return getChildrenByRole(Roles.EMBEDDED_STATEMENT);
+    }
+
+    public final Expression getExpression() {
+        return getChildByRole(EXPRESSION_ROLE);
+    }
+
+    public final void setExpression(final Expression value) {
+        setChildByRole(EXPRESSION_ROLE, value);
     }
 
     public final AstNodeCollection<CaseLabel> getCaseLabels() {
@@ -54,7 +74,8 @@ public class SwitchSection extends AstNode {
 
             return !otherSection.isNull() &&
                    getCaseLabels().matches(otherSection.getCaseLabels(), match) &&
-                   getStatements().matches(otherSection.getStatements(), match);
+                   getStatements().matches(otherSection.getStatements(), match) &&
+                   getExpression().matches(otherSection.getExpression(), match);
         }
 
         return false;

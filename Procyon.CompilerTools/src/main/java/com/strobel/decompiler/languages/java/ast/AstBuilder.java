@@ -16,9 +16,14 @@
 
 package com.strobel.decompiler.languages.java.ast;
 
+import com.strobel.assembler.ir.ConstantPool;
 import com.strobel.assembler.ir.attributes.AnnotationDefaultAttribute;
 import com.strobel.assembler.ir.attributes.AttributeNames;
 import com.strobel.assembler.ir.attributes.LineNumberTableAttribute;
+import com.strobel.assembler.ir.attributes.NestHostAttribute;
+import com.strobel.assembler.ir.attributes.NestMembersAttribute;
+import com.strobel.assembler.ir.attributes.PermittedSubclassesAttribute;
+import com.strobel.assembler.ir.attributes.RecordAttribute;
 import com.strobel.assembler.ir.attributes.SourceAttribute;
 import com.strobel.assembler.metadata.*;
 import com.strobel.assembler.metadata.annotations.*;
@@ -480,11 +485,18 @@ public final class AstBuilder {
         astType.putUserData(Keys.TYPE_DEFINITION, type);
         astType.putUserData(Keys.TYPE_REFERENCE, type);
 
-        if (type.isEnum()) {
+        if ("module-info".equals(type.getSimpleName())) {
+            astType.setClassType(ClassType.CLASS);
+            astType.setName("module-info");
+        }
+        else if (type.isEnum()) {
             astType.setClassType(ClassType.ENUM);
         }
         else if (type.isAnnotation()) {
             astType.setClassType(ClassType.ANNOTATION);
+        }
+        else if ((type.getModifiers() & Flags.ACC_RECORD) != 0) {
+            astType.setClassType(ClassType.RECORD);
         }
         else if (type.isInterface()) {
             astType.setClassType(ClassType.INTERFACE);
@@ -516,6 +528,9 @@ public final class AstBuilder {
             astType.getAnnotations().add(createAnnotation(annotation));
         }
 
+        addPermittedSubclasses(astType, type);
+        addRecordComponents(astType, type);
+
         addTypeMembers(astType, type);
 
         return astType;
@@ -540,11 +555,27 @@ public final class AstBuilder {
     }
 
     private void addTypeMembers(final TypeDeclaration astType, final TypeDefinition type) {
+        java.util.Set<String> recordComponentNames = null;
+        if (astType.getClassType() == ClassType.RECORD) {
+            recordComponentNames = new java.util.HashSet<>();
+            for (final ParameterDeclaration p : astType.getRecordComponents()) {
+                recordComponentNames.add(p.getName());
+            }
+        }
         for (final FieldDefinition field : type.getDeclaredFields()) {
+            if (recordComponentNames != null && recordComponentNames.contains(field.getName())) {
+                continue;
+            }
             astType.addChild(createField(field), Roles.TYPE_MEMBER);
         }
 
         for (final MethodDefinition method : type.getDeclaredMethods()) {
+            if (astType.getClassType() == ClassType.RECORD) {
+                String mn = method.getName();
+                if (("toString".equals(mn) || "hashCode".equals(mn) || "equals".equals(mn)) && method.isSynthetic()) {
+                    continue;
+                }
+            }
             if (method.isConstructor()) {
                 astType.addChild(createConstructor(method), Roles.TYPE_MEMBER);
             }
@@ -713,6 +744,18 @@ public final class AstBuilder {
         astMethod.setBody(createMethodBody(method, astMethod.getParameters()));
         astMethod.putUserData(Keys.METHOD_DEFINITION, method);
         astMethod.putUserData(Keys.MEMBER_REFERENCE, method);
+        if (method.getDeclaringType() != null && (method.getDeclaringType().getModifiers() & Flags.ACC_RECORD) != 0) {
+            final RecordAttribute ra = SourceAttribute.find(AttributeNames.Record, method.getDeclaringType().getSourceAttributes());
+            if (ra != null && ra.getComponents().size() == method.getParameters().size()) {
+                boolean matches = true;
+                for (int i = 0; i < ra.getComponents().size(); i++) {
+                    if (!ra.getComponents().get(i).getName().equals(method.getParameters().get(i).getName())) { matches = false; break; }
+                }
+                if (matches && _context.getSettings().getUseRecordCompactConstructor()) {
+                    astMethod.setCompact(true);
+                }
+            }
+        }
 
         for (final CustomAnnotation annotation : method.getAnnotations()) {
             astMethod.getAnnotations().add(createAnnotation(annotation));
@@ -945,5 +988,33 @@ public final class AstBuilder {
         }
 
         throw ContractUtils.unreachable();
+    }
+
+    private void addPermittedSubclasses(final TypeDeclaration astType, final TypeDefinition type) {
+        final PermittedSubclassesAttribute attr = SourceAttribute.find(
+            AttributeNames.PermittedSubclasses, type.getSourceAttributes());
+        if (attr != null) {
+            for (final ConstantPool.TypeInfoEntry entry : attr.getClasses()) {
+                final TypeReference ref = new MetadataParser(type).parseTypeDescriptor(entry.getName());
+                astType.addChild(convertType(ref), Roles.PERMITTED_SUBCLASS);
+            }
+        }
+    }
+
+    private void addRecordComponents(final TypeDeclaration astType, final TypeDefinition type) {
+        final RecordAttribute attr = SourceAttribute.find(
+            AttributeNames.Record, type.getSourceAttributes());
+        if (attr != null && astType.getClassType() == ClassType.RECORD) {
+            for (final RecordAttribute.RecordComponentInfo comp : attr.getComponents()) {
+                final TypeReference compType = new MetadataParser(type).parseTypeDescriptor(comp.getDescriptor());
+                final ParameterDeclaration param = new ParameterDeclaration(comp.getName(), convertType(compType));
+                for (final SourceAttribute a : comp.getAttributes()) {
+                    if (a instanceof com.strobel.assembler.ir.attributes.AnnotationsAttribute) {
+                        continue;
+                    }
+                }
+                astType.addChild(param, Roles.RECORD_COMPONENT);
+            }
+        }
     }
 }

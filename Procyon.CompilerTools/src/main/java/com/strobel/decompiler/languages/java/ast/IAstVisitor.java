@@ -89,4 +89,5 @@ public interface IAstVisitor<T, R> {
     R visitAssertStatement(AssertStatement node, T data);
     R visitLambdaExpression(LambdaExpression node, T data);
     R visitLocalTypeDeclarationStatement(LocalTypeDeclarationStatement node, T data);
+    default R visitYieldStatement(YieldStatement node, T data) { return null; }
 }

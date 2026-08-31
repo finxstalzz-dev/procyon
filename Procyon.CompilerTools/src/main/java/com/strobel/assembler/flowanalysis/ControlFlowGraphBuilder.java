@@ -305,11 +305,14 @@ public final class ControlFlowGraphBuilder {
             final Instruction end = node.getEnd();
 
             if (end != null &&
-                end.getOffset() < _instructions.get(_instructions.size() - 1).getEndOffset()) {
+                node.getNodeType() == ControlFlowNodeType.Normal) {
 
                 final ControlFlowNode innermostHandler = findInnermostExceptionHandlerNode(node.getEnd().getOffset());
 
                 if (innermostHandler == _exceptionalExit) {
+                    if (!blockMayThrow(node)) {
+                        continue;
+                    }
                     final ControlFlowNode handlerBlock = findInnermostHandlerBlock(node.getEnd().getOffset());
 
                     ControlFlowNode finallyBlock;
@@ -692,6 +695,16 @@ public final class ControlFlowGraphBuilder {
 
         return start.getOffset() == anchorStart.getOffset() &&
                end.getOffset() < anchorEnd.getOffset();
+    }
+
+    private boolean blockMayThrow(final ControlFlowNode node) {
+        for (final Instruction instruction : node.getInstructions()) {
+            final OpCode op = instruction.getOpCode();
+            if (op.canThrow() || op.isThrow() || op.isInvoke()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ControlFlowNode findParentExceptionHandlerNode(final ControlFlowNode node) {

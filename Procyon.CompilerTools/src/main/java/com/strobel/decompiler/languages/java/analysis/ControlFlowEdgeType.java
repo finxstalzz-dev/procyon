@@ -35,5 +35,10 @@ public enum ControlFlowEdgeType {
     /**
      * A jump statement (goto, goto case, break or continue)
      */
-    Jump
+    Jump,
+
+    /**
+     * Exception control flow (try -> catch)
+     */
+    Exception
 }

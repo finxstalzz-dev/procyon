@@ -47,7 +47,25 @@ public enum CompilerTarget {
     /**
      * JDK 8.
      */
-    JDK1_8("1.8", 52, 0);
+    JDK1_8("1.8", 52, 0),
+    JDK1_9("9", 53, 0),
+    JDK1_10("10", 54, 0),
+    JDK_11("11", 55, 0),
+    JDK_12("12", 56, 0),
+    JDK_13("13", 57, 0),
+    JDK_14("14", 58, 0),
+    JDK_15("15", 59, 0),
+    JDK_16("16", 60, 0),
+    JDK_17("17", 61, 0),
+    JDK_18("18", 62, 0),
+    JDK_19("19", 63, 0),
+    JDK_20("20", 64, 0),
+    JDK_21("21", 65, 0),
+    JDK_22("22", 66, 0),
+    JDK_23("23", 67, 0),
+    JDK_24("24", 68, 0),
+    JDK_25("25", 69, 0),
+    JDK_26("26", 70, 0);
 
     private static final CompilerTarget[] VALUES = values();
     private static final CompilerTarget MIN = VALUES[0];
@@ -71,6 +89,24 @@ public enum CompilerTarget {
         tab.put("6", JDK1_6);
         tab.put("7", JDK1_7);
         tab.put("8", JDK1_8);
+        tab.put("9", JDK1_9);
+        tab.put("10", JDK1_10);
+        tab.put("11", JDK_11);
+        tab.put("12", JDK_12);
+        tab.put("13", JDK_13);
+        tab.put("14", JDK_14);
+        tab.put("15", JDK_15);
+        tab.put("16", JDK_16);
+        tab.put("17", JDK_17);
+        tab.put("18", JDK_18);
+        tab.put("19", JDK_19);
+        tab.put("20", JDK_20);
+        tab.put("21", JDK_21);
+        tab.put("22", JDK_22);
+        tab.put("23", JDK_23);
+        tab.put("24", JDK_24);
+        tab.put("25", JDK_25);
+        tab.put("26", JDK_26);
     }
 
     public final String name;

@@ -259,7 +259,15 @@ public final class InsertParenthesesVisitor extends DepthFirstAstVisitor<Void, V
         else {
             parenthesizeIfRequired(node.getExpression(), RELATIONAL_AND_TYPE_TESTING);
         }
+        if (node.getPatternVariable() != null && "_".equals(node.getPatternVariable())) {
+            // unnamed pattern needs no extra parens
+        }
         return super.visitInstanceOfExpression(node, data);
+    }
+    @Override
+    public Void visitYieldStatement(final YieldStatement node, final Void data) {
+        parenthesizeIfRequired(node.getExpression(), ASSIGNMENT);
+        return super.visitYieldStatement(node, data);
     }
 
     @Override

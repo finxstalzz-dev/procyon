@@ -23,12 +23,33 @@ import com.strobel.decompiler.patterns.Role;
 public class CaseLabel extends AstNode {
     public final static TokenRole CASE_KEYWORD_ROLE = new TokenRole("case", TokenRole.FLAG_KEYWORD);
     public final static TokenRole DEFAULT_KEYWORD_ROLE = new TokenRole("default", TokenRole.FLAG_KEYWORD);
+    public final static TokenRole WHEN_KEYWORD_ROLE = new TokenRole("when", TokenRole.FLAG_KEYWORD);
 
     public CaseLabel() {
     }
 
     public CaseLabel(final Expression value) {
         setExpression(value);
+    }
+
+    public final AstType getPatternType() {
+        return getChildByRole(Roles.TYPE);
+    }
+    public final void setPatternType(final AstType t) { setChildByRole(Roles.TYPE, t); }
+    public final String getPatternVariable() {
+        final Identifier id = getChildByRole(Roles.PATTERN_VARIABLE);
+        return id.isNull() ? null : id.getName();
+    }
+    public final void setPatternVariable(final String name) {
+        if (name == null) setChildByRole(Roles.PATTERN_VARIABLE, Identifier.NULL);
+        else setChildByRole(Roles.PATTERN_VARIABLE, Identifier.create(name));
+    }
+    public final Expression getGuardExpression() {
+        return getChildByRole(Roles.CONDITION);
+    }
+    public final void setGuardExpression(final Expression e) { setChildByRole(Roles.CONDITION, e); }
+    public final AstNodeCollection<ParameterDeclaration> getRecordPatternComponents() {
+        return getChildrenByRole(Roles.RECORD_PATTERN_COMPONENT);
     }
 
     @Override
@@ -63,6 +84,8 @@ public class CaseLabel extends AstNode {
     public boolean matches(final INode other, final Match match) {
         return other instanceof CaseLabel &&
                !other.isNull() &&
-               getExpression().matches(((CaseLabel) other).getExpression(), match);
+               getExpression().matches(((CaseLabel) other).getExpression(), match) &&
+               getPatternType().matches(((CaseLabel) other).getPatternType(), match) &&
+               getGuardExpression().matches(((CaseLabel) other).getGuardExpression(), match);
     }
 }

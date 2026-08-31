@@ -33,12 +33,14 @@ public class PrimitiveExpression extends Expression {
 
     private String _literalValue;
     private Object _value;
+    private boolean _isTextBlock;
 
     public PrimitiveExpression( final int offset, final Object value) {
         super( offset);
         _value = value;
         _startLocation = TextLocation.EMPTY;
         _literalValue = StringUtilities.EMPTY;
+        _isTextBlock = false;
     }
 
     public PrimitiveExpression( final int offset, final Object value, final String literalValue) {
@@ -46,6 +48,7 @@ public class PrimitiveExpression extends Expression {
         _value = value;
         _startLocation = TextLocation.EMPTY;
         _literalValue = literalValue != null ? literalValue : StringUtilities.EMPTY;
+        _isTextBlock = false;
     }
 
     public PrimitiveExpression( final int offset, final Object value, final TextLocation startLocation, final String literalValue) {
@@ -53,6 +56,16 @@ public class PrimitiveExpression extends Expression {
         _value = value;
         _startLocation = startLocation;
         _literalValue = literalValue != null ? literalValue : StringUtilities.EMPTY;
+        _isTextBlock = false;
+    }
+
+    public final boolean isTextBlock() {
+        return _isTextBlock;
+    }
+
+    public final void setTextBlock(final boolean isTextBlock) {
+        verifyNotFrozen();
+        _isTextBlock = isTextBlock;
     }
 
     @Override

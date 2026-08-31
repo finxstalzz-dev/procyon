@@ -47,6 +47,10 @@ public final class Roles {
     public final static Role<EntityDeclaration> TYPE_MEMBER = new Role<>("TypeMember", EntityDeclaration.class);
     public final static Role<TypeDeclaration> TOP_LEVEL_TYPE_ROLE = new Role<>("TopLevelType", TypeDeclaration.class, TypeDeclaration.NULL);
     public final static Role<TypeDeclaration> LOCAL_TYPE_DECLARATION = new Role<>("LocalTypeDeclaration", TypeDeclaration.class, TypeDeclaration.NULL);
+    public final static Role<AstType> PERMITTED_SUBCLASS = new Role<>("PermittedSubclass", AstType.class, AstType.NULL);
+    public final static Role<ParameterDeclaration> RECORD_COMPONENT = new Role<>("RecordComponent", ParameterDeclaration.class);
+    public final static Role<Identifier> PATTERN_VARIABLE = new Role<>("PatternVariable", Identifier.class, Identifier.NULL);
+    public final static Role<ParameterDeclaration> RECORD_PATTERN_COMPONENT = new Role<>("RecordPatternComponent", ParameterDeclaration.class);
     public final static Role<AstType> THROWN_TYPE = new Role<>("ThrownType", AstType.class, AstType.NULL);
     public final static Role<PackageDeclaration> PACKAGE = new Role<>("Package", PackageDeclaration.class, PackageDeclaration.NULL);
     public final static Role<NewLineNode> NEW_LINE = new Role<>("NewLine", NewLineNode.class);
@@ -83,6 +87,10 @@ public final class Roles {
     public final static TokenRole INTERFACE_KEYWORD = new TokenRole("interface", TokenRole.FLAG_KEYWORD);
     public final static TokenRole CLASS_KEYWORD = new TokenRole("class", TokenRole.FLAG_KEYWORD);
     public final static TokenRole ANNOTATION_KEYWORD = new TokenRole("@interface", TokenRole.FLAG_KEYWORD);
+    public final static TokenRole RECORD_KEYWORD = new TokenRole("record", TokenRole.FLAG_KEYWORD);
+    public final static TokenRole PERMITS_KEYWORD = new TokenRole("permits", TokenRole.FLAG_KEYWORD);
+    public final static TokenRole SEALED_KEYWORD = new TokenRole("sealed", TokenRole.FLAG_KEYWORD);
+    public final static TokenRole NON_SEALED_KEYWORD = new TokenRole("non-sealed", TokenRole.FLAG_KEYWORD);
     public final static TokenRole EXTENDS_KEYWORD = new TokenRole("extends", TokenRole.FLAG_KEYWORD);
     public final static TokenRole IMPLEMENTS_KEYWORD = new TokenRole("implements", TokenRole.FLAG_KEYWORD);
 }

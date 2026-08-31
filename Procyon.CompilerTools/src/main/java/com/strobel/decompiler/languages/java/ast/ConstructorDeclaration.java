@@ -22,6 +22,9 @@ import com.strobel.decompiler.patterns.Match;
 
 public class ConstructorDeclaration extends EntityDeclaration {
     public final static TokenRole THROWS_KEYWORD = MethodDeclaration.THROWS_KEYWORD;
+    private boolean _isCompact;
+    public final boolean isCompact() { return _isCompact; }
+    public final void setCompact(final boolean v) { verifyNotFrozen(); _isCompact = v; }
 
     public final AstNodeCollection<TypeParameterDeclaration> getTypeParameters() {
         return getChildrenByRole(Roles.TYPE_PARAMETER);

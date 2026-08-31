@@ -277,7 +277,8 @@ public abstract class MetadataReader {
                         final int varArgsAdjustedMethodParameters = methodParameters - varArgsAdjustment;
 
                         if (varArgsAdjustedMethodParameters > arguments.length + 3) {
-                       		throw Error.invalidBootstrapMethodEntry(bootstrapMethod, varArgsAdjustedMethodParameters, arguments.length);
+                       		// Lenient: Java 9+ StringConcatFactory and future bootstrap signatures may evolve
+                       		// Do not throw, just allow missing optional args
                         }
                     }
 

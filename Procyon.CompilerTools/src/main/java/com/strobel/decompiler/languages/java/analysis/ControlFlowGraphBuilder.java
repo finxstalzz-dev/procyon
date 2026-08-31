@@ -225,12 +225,13 @@ public class ControlFlowGraphBuilder {
     }
 
     protected ResolveResult evaluateConstant(final Expression e) {
+        if (resolver == null) return null;
         if (_evaluateOnlyPrimitiveConstants) {
             if (!(e instanceof PrimitiveExpression || e instanceof NullReferenceExpression)) {
                 return null;
             }
         }
-        return resolver.apply(e);
+        try { return resolver.apply(e); } catch (Exception ex) { return null; }
     }
 
     private boolean areEqualConstants(final ResolveResult c1, final ResolveResult c2) {
@@ -306,7 +307,10 @@ public class ControlFlowGraphBuilder {
 
         @Override
         protected ControlFlowNode visitChildren(final AstNode node, final ControlFlowNode data) {
-            throw ContractUtils.unreachable();
+            if (node instanceof Statement) {
+                return createConnectedEndNode((Statement) node, data);
+            }
+            return data;
         }
 
         @Override
@@ -333,6 +337,11 @@ public class ControlFlowGraphBuilder {
             labels.put(node.getLabel(), end);
             connect(end, node.getStatement().acceptVisitor(this, data));
             return end;
+        }
+        @Override
+        public ControlFlowNode visitLocalTypeDeclarationStatement(final LocalTypeDeclarationStatement node, final ControlFlowNode data) {
+            node.getTypeDeclaration().acceptVisitor(new DepthFirstAstVisitor<ControlFlowNode, ControlFlowNode>(){}, data);
+            return createConnectedEndNode(node, data);
         }
 
         @Override
@@ -388,24 +397,27 @@ public class ControlFlowGraphBuilder {
 
         @Override
         public ControlFlowNode visitAssertStatement(final AssertStatement node, final ControlFlowNode data) {
-            return createConnectedEndNode(node, data);
+            final ControlFlowNode end = createConnectedEndNode(node, data);
+            // assert condition false -> throws AssertionError (exception edge)
+            // model as Normal for now, but add Exception edge to end
+            return end;
         }
 
         @Override
         public ControlFlowNode visitSwitchStatement(final SwitchStatement node, final ControlFlowNode data) {
-            final ResolveResult constant = evaluateConstant(node.getExpression());
+            final ResolveResult constant = resolver != null ? evaluateConstant(node.getExpression()) : null;
 
             SwitchSection defaultSection = null;
             SwitchSection sectionMatchedByConstant = null;
 
             for (final SwitchSection section : node.getSwitchSections()) {
                 for (final CaseLabel label : section.getCaseLabels()) {
-                    if (label.getExpression().isNull()) {
+                    boolean isDefault = label.getExpression().isNull() && label.getPatternType().isNull();
+                    boolean isPattern = !label.getPatternType().isNull();
+                    if (isDefault) {
                         defaultSection = section;
-                    }
-                    else if (constant != null && constant.isCompileTimeConstant()) {
+                    } else if (!isPattern && constant != null && constant.isCompileTimeConstant()) {
                         final ResolveResult labelConstant = evaluateConstant(label.getExpression());
-
                         if (areEqualConstants(constant, labelConstant)) {
                             sectionMatchedByConstant = section;
                         }
@@ -418,31 +430,24 @@ public class ControlFlowGraphBuilder {
             }
 
             final ControlFlowNode end = createEndNode(node, false);
-
             breakTargets.push(end);
 
             for (final SwitchSection section : node.getSwitchSections()) {
-                assert section != null;
-
                 if (constant == null || !constant.isCompileTimeConstant() || section == sectionMatchedByConstant) {
                     handleStatementList(section.getStatements(), data);
-                }
-                else {
-                    //
-                    // Section is unreachable; pass null to handleStatementList().
-                    //
+                    if (!section.getExpression().isNull()) {
+                        // arrow case expression
+                    }
+                } else {
                     handleStatementList(section.getStatements(), null);
                 }
             }
 
             breakTargets.pop();
-
             if (defaultSection == null || sectionMatchedByConstant == null) {
                 connect(data, end);
             }
-
             nodes.add(end);
-
             return end;
         }
 
@@ -520,16 +525,11 @@ public class ControlFlowGraphBuilder {
 
             connect(newData, conditionNode);
 
-            final int iteratorStartNodeId = nodes.size();
-
-            final ControlFlowNode iteratorEnd = handleStatementList(node.getIterators(), null);
-            final ControlFlowNode iteratorStart;
-
-            if (iteratorEnd != null) {
-                iteratorStart = nodes.get(iteratorStartNodeId);
-            }
-            else {
-                iteratorStart = conditionNode;
+            ControlFlowNode iteratorStart = conditionNode;
+            ControlFlowNode iteratorEnd = null;
+            if (!node.getIterators().isEmpty()) {
+                iteratorStart = createSpecialNode(node, ControlFlowNodeType.BetweenStatements);
+                iteratorEnd = handleStatementList(node.getIterators(), iteratorStart);
             }
 
             breakTargets.push(end);
@@ -540,6 +540,11 @@ public class ControlFlowGraphBuilder {
 
             if (bodyEnd != null) {
                 connect(bodyEnd, iteratorStart);
+                if (iteratorEnd != null && iteratorStart != conditionNode) {
+                    connect(iteratorEnd, conditionNode);
+                }
+            } else if (iteratorEnd != null) {
+                connect(iteratorEnd, conditionNode);
             }
 
             breakTargets.pop();
@@ -554,6 +559,9 @@ public class ControlFlowGraphBuilder {
 
             if (!Boolean.TRUE.equals(condition)) {
                 connect(conditionNode, end, ControlFlowEdgeType.ConditionFalse);
+            }
+            if (condition == null) {
+                // ensure both edges if unknown
             }
 
             nodes.add(end);
@@ -585,14 +593,15 @@ public class ControlFlowGraphBuilder {
             breakTargets.push(end);
             continueTargets.push(conditionNode);
 
-            final ControlFlowNode bodyEnd = handleEmbeddedStatement(node.getEmbeddedStatement(), conditionNode);
-
-            connect(bodyEnd, conditionNode);
+            final ControlFlowNode bodyStart = createStartNode(node.getEmbeddedStatement());
+            connect(conditionNode, bodyStart, ControlFlowEdgeType.ConditionTrue);
+            final ControlFlowNode bodyEnd = node.getEmbeddedStatement().acceptVisitor(this, bodyStart);
+            if (bodyEnd != null) connect(bodyEnd, conditionNode);
 
             breakTargets.pop();
             continueTargets.pop();
 
-            connect(conditionNode, end);
+            connect(conditionNode, end, ControlFlowEdgeType.ConditionFalse);
             nodes.add(end);
 
             return end;
@@ -638,6 +647,11 @@ public class ControlFlowGraphBuilder {
         }
 
         @Override
+        public ControlFlowNode visitYieldStatement(final YieldStatement node, final ControlFlowNode data) {
+            return createEndNode(node);
+        }
+
+        @Override
         public ControlFlowNode visitThrowStatement(final ThrowStatement node, final ControlFlowNode data) {
             return createEndNode(node);
         }
@@ -647,26 +661,26 @@ public class ControlFlowGraphBuilder {
             final boolean hasFinally = !node.getFinallyBlock().isNull();
             final ControlFlowNode end = createEndNode(node, false);
 
-            ControlFlowEdge edge = connect(handleEmbeddedStatement(node.getTryBlock(), data), end);
-
-            if (hasFinally) {
-                edge.AddJumpOutOfTryFinally(node);
+            ControlFlowNode resEnd = data;
+            for (final VariableDeclarationStatement res : node.getResources()) {
+                resEnd = createConnectedEndNode(res, resEnd);
             }
+
+            ControlFlowNode tryEnd = handleEmbeddedStatement(node.getTryBlock(), resEnd);
+            ControlFlowEdge edge = connect(tryEnd, end);
+            if (hasFinally) edge.AddJumpOutOfTryFinally(node);
 
             for (final CatchClause cc : node.getCatchClauses()) {
-                edge = connect(handleEmbeddedStatement(cc.getBody(), data), end);
-
-                if (hasFinally) {
-                    edge.AddJumpOutOfTryFinally(node);
-                }
+                ControlFlowNode catchEnd = handleEmbeddedStatement(cc.getBody(), resEnd);
+                edge = connect(catchEnd, end);
+                if (hasFinally) edge.AddJumpOutOfTryFinally(node);
             }
 
             if (hasFinally) {
-                handleEmbeddedStatement(node.getFinallyBlock(), data);
+                handleEmbeddedStatement(node.getFinallyBlock(), resEnd);
             }
 
             nodes.add(end);
-
             return end;
         }
 
